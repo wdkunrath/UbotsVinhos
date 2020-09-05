@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import ContentHeader from '../../components/ContentHeader';
 import WalletBox from '../../components/WalletBox';
 import ListService from '../../services/List';
@@ -9,12 +9,11 @@ import {
     Content, 
 } from './styles';
 
-
 const Dashboard: React.FC = () => {
     const [data, setData] = useState<IData[]>([]);
     const [maiorUnica, setMaiorUnica] = useState('');
     
-    useEffect(()=>{
+    useMemo(()=>{
         const requestApi = async () => {
             const result = await ListService.getClientes(); 
             setData(result.data);            

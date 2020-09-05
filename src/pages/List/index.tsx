@@ -12,20 +12,31 @@ import {
 const List: React.FC<IRouteParams> = ({ match }) => {
     const [data, setData] = useState<IData[]>([]);
     const [compras, setCompras] = useState<ICompras[]>([]);
-    const [fieis, setFieis] = useState<ICompras[]>([]);
+    const [fieis, setFieis] = useState<IFieis[]>([]);
     const [clientes, setCliente] = useState<ICliente[]>([]);
-    
-    useEffect(()=>{
+    const [teste,setTeste] = useState('');
+
+    useMemo(()=>{
         const requestApi = async () => {
             const resultC = await ListService.getClientes(); 
             setData(resultC.data);
+        }
+        requestApi();
+    },[setData]);
 
+    useMemo(()=>{
+        const requestApi = async () => {
             const result = await ListService.getCompras(); 
             let ordenado = result.data.sort((a:any, b:any) => (a.valorTotal > b.valorTotal) ? -1 : 1 );
             setCompras(ordenado);
-
+        }
+        requestApi();
+    },[setCompras]);
+    
+    useEffect(()=>{
+        const requestApi = async () => {
             let array:ICliente[] = [];
-            ordenado.map((item:ICompras)=>{
+            compras.map((item:ICompras)=>{
                 data.map((element:IData) => {
                     if(element.cpf.replace('-','.')===item.cliente.substr(1)){
                         array.push(element);
@@ -33,16 +44,6 @@ const List: React.FC<IRouteParams> = ({ match }) => {
                 })
             })
             
-            let comprado:ICompras[] = [];
-            data.map((element:IData) => {
-                ordenado.map((item:ICompras)=>{
-                    if(element.cpf.replace('-','.')===item.cliente.substr(1)){
-                        comprado.push(item);
-                    }
-                })
-            })
-            setFieis(comprado);
-
             let reduced: ICliente[] =[];
             array.forEach((item) => {
                 let duplicated  = reduced.findIndex(redItem => {
@@ -54,13 +55,54 @@ const List: React.FC<IRouteParams> = ({ match }) => {
                 }
             });
            setCliente(reduced);
-
-
         };           
 
         requestApi();
 
-    },[data,setCliente,setCompras,setData]);
+    },[data,setCliente]);
+
+    useEffect(()=>{
+        const requestApi = async () => {
+            let array:IFieis[] = [];
+            const contaFrequencia = (item:ICompras, element:IData) =>{
+                var i = 0;                
+                array.push({
+                    clienteNome: element.nome,
+                    valorTotalComprado: item.valorTotal,
+                    totalItensComprados: item.itens.length,
+                    ocorrenciaCompra: i++
+                });
+            }
+
+            compras.map((item)=>{
+                data.map((element)=>{
+                    setTeste('teste');
+                    if(element.cpf.replace('-','.')===item.cliente.substr(1)){
+                        contaFrequencia(item,element);
+                    } 
+                });
+            });
+
+            let reduced: IFieis[] =[];
+            array.forEach((item) => {
+                let duplicated  = reduced.findIndex(redItem => {
+                    return {
+                        clienteNome: redItem.clienteNome,
+                        valorTotalComprado: redItem.valorTotalComprado,
+                        totalItensComprados: redItem.valorTotalComprado,
+                        ocorrenciaCompra: redItem.ocorrenciaCompra +1
+                    }
+                }) > -1;
+            
+                if(!duplicated) {
+                    reduced.push(item);
+                }
+            });            
+
+            setFieis(reduced);
+        }
+        requestApi();
+    },[setFieis,setTeste]);
 
     const movimentType = match.params.type;
 
@@ -88,7 +130,10 @@ const List: React.FC<IRouteParams> = ({ match }) => {
             }
         }     
     },[movimentType]);
+
     console.log(fieis);
+    console.log(teste);
+
     return (
         <Container>
             <ContentHeader title={pageData?.title} lineColor={pageData?.lineColor}>                
@@ -96,9 +141,9 @@ const List: React.FC<IRouteParams> = ({ match }) => {
 
             <Content>
                 {movimentType === 'clientes' ? (
-                    clientes.map(item => (
+                    clientes.map((item, i) => (
                         <HistoryClienteCard 
-                            key={item.id}
+                            key={i}
                             title={item.nome}
                             subtitle={item.cpf}
                         />
@@ -106,9 +151,9 @@ const List: React.FC<IRouteParams> = ({ match }) => {
                 ):(
                     <>
                     {movimentType === 'vinhos' ? (
-                        compras.map(item => (
+                        compras.map((item, i )=> (
                             <HistoryFinanceCard
-                                key={item.cliente}
+                                key={i}
                                 title={item.cliente}
                                 subtitle={item.itens.length}
                                 tagColor='#BFBFBF'
